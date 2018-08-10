@@ -24,9 +24,7 @@ func NewClient(email, pass string) *Client {
   return &Client{ Email: email, Pass: pass }
 }
 
-func (cl *Client)List(opts ...interface{}) ([]Domain, error) {
-  domains := []Domain{}
-
+func httpclientopt(opts []interface{}) *http.Client {
   httpclient := &http.Client{}
   for _, opt := range opts {
     switch v := opt.(type) {
@@ -36,6 +34,13 @@ func (cl *Client)List(opts ...interface{}) ([]Domain, error) {
     default:
     }
   }
+  return httpclient
+}
+
+func (cl *Client)List(opts ...interface{}) ([]Domain, error) {
+  domains := []Domain{}
+
+  httpclient := httpclientopt(opts)
   jar, err := cookiejar.New(nil)
   if err != nil {
     return domains, fmt.Errorf("cookiejar: %v", err)
@@ -87,4 +92,25 @@ func (cl *Client)List(opts ...interface{}) ([]Domain, error) {
   }
 
   return domains, nil
+}
+
+func (cl *Client)Update(domain Domain, opts ...interface{}) error {
+  httpclient := httpclientopt(opts)
+
+  // https://www.dnsdynamic.org/api/?hostname=my.dynamic.domain.http01.com&myip=aaa.bbb.ccc.ddd
+  apipath := "https://www.dnsdynamic.org/api/"
+  uri := fmt.Sprintf("%s?hostname=%s&myip=%s", apipath, domain.Name, domain.IP)
+  api, err := url.Parse(uri)
+  if err != nil {
+    return fmt.Errorf("url.Parse: %v", err)
+  }
+  api.User = url.UserPassword(cl.Email, cl.Pass)
+
+  resp, err := httpclient.Get(api.String())
+  if err != nil {
+    return fmt.Errorf("Update API: %v", err)
+  }
+  resp.Body.Close()
+
+  return nil
 }
