@@ -4,6 +4,7 @@ package dnsdynamic
 import (
   "io/ioutil"
   "fmt"
+  "net"
   "net/http"
   "net/http/cookiejar"
   "net/url"
@@ -88,7 +89,11 @@ func (cl *Client)List(opts ...interface{}) ([]Domain, error) {
     if len(n) != 4 {
       continue
     }
-    domains = append(domains, Domain{ Name: name, IP: ip })
+    netip := net.ParseIP(ip)
+    if netip == nil {
+      continue
+    }
+    domains = append(domains, Domain{ Name: name, IP: netip.String() })
   }
 
   return domains, nil
