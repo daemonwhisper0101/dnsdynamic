@@ -59,7 +59,7 @@ func (cl *Client)List(opts ...interface{}) ([]Domain, error) {
 
   resp, err := httpclient.Get("https://www.dnsdynamic.org/manage.php?page=domains")
   if err != nil {
-    return domains, fmt.Errorf("http.PostForm: manage: %v", err)
+    return domains, fmt.Errorf("http.Get: manage: %v", err)
   }
   defer resp.Body.Close()
   body, err := ioutil.ReadAll(resp.Body)
